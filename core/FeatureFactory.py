@@ -2,54 +2,13 @@ import json, sys
 import base64
 #import Datum
 import nltk
+
 from core.Datum import Datum
 '''
 Created on 29-Apr-2016
 
 @author: prerit
 '''
-
-def getShape( word):
-    s=""
-    #s.center(len(word))        
-    if len(word) >= 4:
-        s='X' + s if word[0].isupper() else 'x' + s
-        s='X' + s if word[1].isupper() else 'x' + s
-        temp = ""
-        for i in range(2,len(word)-2):
-            if word[i].isupper():
-                if temp.find('X')<0:
-                    temp+= 'X'
-            
-            elif word[i].islower():
-                if temp.find('x') < 0:
-                    temp+='x'
-                    
-            elif word[i].isdigit():
-                if temp.find('d') < 0:
-                    temp+='d'
-                    
-            else:
-                temp+= word[i]
-        
-        s = s  + temp    
-        s+='X' if word[-1].isupper() else 'x'
-        s+='X' if word[-2].isupper() else 'x'
-    
-    else:
-        for i in range(0,len(word)):
-            if word[i].isupper():
-                s+='X'
-            if word[i].islower():
-                s+='X'
-            if word[i].isdigit():
-                s+='d'
-            else:
-                 s+= word[i]    
-            
-    s = ''.join(s.split())    
-    return s
-        
 class FeatureFactory:
     """
     Add any necessary initialization steps for your features here
@@ -64,7 +23,7 @@ class FeatureFactory:
     Words is a list of the words in the entire corpus, previousLabel is the label
     for position-1 (or O if it's the start of a new sentence), and position
     is the word you are adding features for. PreviousLabel must be the
-    only label that is visible to this method. 
+    only label that is visible to this method. DONE
     """
     
     def computeFeatures(self, words, previousLabel, position):
@@ -75,36 +34,22 @@ class FeatureFactory:
         features.append("word=" + currentWord)
         features.append("prevLabel=" + previousLabel)
         features.append("word=" + currentWord + ", prevLabel=" + previousLabel)
-        features.append("start_case="+str(currentWord[0].isupper()))
-        features.append("shape=" + getShape(currentWord))
-        if(words[position-1]=='.'):
-            features.append("newSent=True")
-        tag = nltk.pos_tag(nltk.word_tokenize(currentWord))[0][1]
-        features.append("tag=" + tag)
-        '''
-        features.append("shape"+getShape(currentWord))
-        
-        desiredTags = ['NN','NNP']
-        
-        if tag in desiredTags:
-            features.append("tag=yes")
-        else:
-            features.append("tag=no")
-        '''    
-        return features        
-    """
-        Warning: If you encounter "line search failure" error when
-        running the program, considering putting the baseline features
-    back. It occurs when the features are too sparse. Once you have
-        added enough features, take out the features that you don't need. 
-    """
-
-
-    """ TODO: Add your features here """
 
         
+                
+        """
+            Warning: If you encounter "line search failure" error when
+            running the program, considering putting the baseline features
+        back. It occurs when the features are too sparse. Once you have
+            added enough features, take out the features that you don't need. 
+        """
+    
+    
+        """ TODO: Add your features here """
+    
+        return features
 
-    """ Do not modify this method """
+    """ Do not modify this method  DONE"""
     def readData(self, filename):
         data = [] 
         
@@ -117,6 +62,8 @@ class FeatureFactory:
             label = line_split[1]
 
             datum = Datum(word, label)
+            #print("Word: ", datum.word)
+            #print("Label: ", datum.label)
             data.append(datum)
 
         return data
@@ -139,7 +86,7 @@ class FeatureFactory:
         return data
 
 
-    """ Do not modify this method """
+    """ Do not modify this method DONE """
     def setFeaturesTrain(self, data):
         newData = []
         words = []
@@ -164,7 +111,7 @@ class FeatureFactory:
 
     """
     Compute the features for all possible previous labels
-    for Viterbi algorithm. Do not modify this method
+    for Viterbi algorithm. Do not modify this method DONE
     """
     def setFeaturesTest(self, data):
         newData = []
@@ -174,7 +121,9 @@ class FeatureFactory:
 
         for datum in data:
             words.append(datum.word)
-            if not datum.label not in labelIndex.keys():
+            if datum.label not in labelIndex.keys():
+                ## Store all labels encountered in the data and the location of a particular 
+                ##label in the labels list
                 labelIndex[datum.label] = len(labels)
                 labels.append(datum.label)
         
@@ -204,7 +153,7 @@ class FeatureFactory:
 
     """
     write words, labels, and features into a json file
-    Do not modify this method
+    Do not modify this method DONE
     """
     def writeData(self, data, filename):
         outFile = open(filename + '.json', 'w')
@@ -212,8 +161,9 @@ class FeatureFactory:
             datum = data[i]
             jsonObj = {}
             jsonObj['_label'] = datum.label
-            jsonObj['_word']= datum.word
+            jsonObj['_word']= str(base64.b32encode(bytes(datum.word, "utf-8")))
             jsonObj['_prevLabel'] = datum.previousLabel
+
 
             featureObj = {}
             features = datum.features
@@ -221,6 +171,7 @@ class FeatureFactory:
                 feature = features[j]
                 featureObj['_'+feature] = feature
             jsonObj['_features'] = featureObj
+
             
             outFile.write(json.dumps(jsonObj) + '\n')
             
