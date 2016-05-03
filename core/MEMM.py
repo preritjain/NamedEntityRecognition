@@ -3,11 +3,15 @@ Created on 29-Apr-2016
 
 @author: prerit
 '''
+import numpy as np
 import base64
+import math
 import json
 from core.Datum import Datum
 from core.FeatureFactory import FeatureFactory
-from py2neo.core import LabelSet
+#from py2neo.core import LabelSet
+#from core.NER import trainData
+
 
 
 
@@ -43,6 +47,64 @@ def runMEMM(trainFile,testFile):
     
     for i in range(1,len(testDataWithMultiplePrevLabels)-1, len(labelSet)):
         testData.append(testDataWithMultiplePrevLabels[i])
+    calculateLiklihood(trainData,labelSet,featureSet,featureIndexes)
+    print(testDataWithMultiplePrevLabels[0].features)
+    print(labelSet)
+    print(featureSet[0:10])
+    #print(featureIndexes)
+'''
+logsum sums over all classes(exp(sum(lambda(j) * fj(ci,d)))
+'''    
+def logsum(scores):
+        maxId = 0
+        max=scores[0]
+        for t in range(0,len(scores)):
+            if scores[t] > max:
+                maxId = t
+                max = scores[t]
+        cutoff = max - 30
+        intermediate = 0.0
+        haveTerms = False
+        
+        
+        for i in range(0,len(scores)):
+            if i != maxId and scores[i] > cutoff:
+                haveTerms = True
+                intermediate += math.exp(scores[i]-max)
+        if haveTerms:
+            return max + math.log(1+intermediate)
+        else:
+            return max
+        
+def logExp(scores):
+    pass
+                    
+
+def likelihood(trainData,labelSet,featureSet, featureIndexes):                     
+def calculateLiklihood(trainData,labelSet,featureSet, featureIndexes):
+    value = 0.0
+    #features = 
+    features = np.zeros(len(labelSet)*len(featureSet))
+    derivatives = np.zeros(shape=(len(labelSet),int(len(features)/len(labelSet))))
+    weights = features.reshape(len(labelSet),int(len(features)/len(labelSet)))
+    print("weights")
+    print(weights)
+    
+    for datum in trainData:
+        scores = list(np.zeros(len(labelSet)))
+        print(datum.label)
+        for feats in datum.features:
+            if featureIndexes.get(feats) != None:
+                f = featureIndexes[feats]
+                for i in range(0,len(labelSet)):
+                    scores[i]+= weights[i][f]
+                     
+                    
+        z = logsum(scores) 
+        for i in range(0,len(scores)):
+            prob = math.exp(scores[i]-z)
+            for feats in datum.features:
+                pass    
                     
 
 def read(fileName):
