@@ -17,6 +17,7 @@ class MaximumEntropy:
         self.labelIndexes = {}
         self.features = []
         self.featureIndexes = {}
+        self.lambdas = []
         '''
         Constructor
         '''
@@ -41,38 +42,27 @@ class MaximumEntropy:
                 self.labels.append(datum.label)
                 self.labelIndexes[datum.label] = lIndex
         
-        print("")    
+            
         feat = list(data[0].features.keys())
         self.features = feat
         print("feat", self.featureIndexes)
         for i in range(0,len(feat)):
-            #print("asd",feat)
             self.featureIndexes[feat[i]] = i  
         
+        self.lambdas = np.zeros(len(self.features))
         return data  
             
-            #datum.features = {'g1':row['g1'],'g2':row['g2'],'g3':row['g3'],'g4':row['g4'],'g5':row['g5'],'g6':row['g6'],'g7':row['g7'],}
-
+            
     def empericalCount(self,trainFeatures):
         
         weights = np.zeros(shape=(len(self.labels),len(trainFeatures[0].features)))
         for datum in trainFeatures:
-            #print(datum.word)
             for label in self.labels:
-                #print("las",label)
-                #print(self.features)
                 for feature in self.features:
-                    #print("1",label,label=='O')
-                    #print("2",datum.label,datum.label==label)
-                    #print("3",datum.features[feature],datum.features[feature]==1)
-                    #print("4",datum.features[feature]=='0')
-                    #print("l",label,feature)
                     if (label.strip() != 'O') and (datum.label == label) and (datum.features[feature]=='1'):
-                        #print("asdf",datum.features[feature])
                         weights[self.labelIndexes[label]][self.featureIndexes[feature]]+=1.0
                     
                     elif label.strip() == 'O' and datum.label == label and datum.features[feature]=='0':
-                        #print("asdf",datum.features[feature])
                         weights[self.labelIndexes[label]][self.featureIndexes[feature]]+=1.0
                     else:
                         continue
@@ -81,10 +71,40 @@ class MaximumEntropy:
         return weights
     
     
+    def getProb(self, datum):
+        counts = {}
+        
+        for label in self.labels:
+            if label == "O":
+                counts[label] = 0
+                for feature in self.features:
+                    if feature == '0':
+                        counts[label] += self.lambdas[self.featureIndexes[feature]]
+            elif label != "O":
+                counts[label] = 0
+                for feature in datum.features:
+                    if feature == '1':
+                        counts[label] += self.lambdas[self.featureIndexes[feature]]
+                        
+        exponents = {}
+        for key in counts.keys():
+            exponents[key] = np.exp(counts[key])
+        
+        return exponents                
+    
+    
     def predtictedCount(self,trainFeatures):
-        
-        
-        print("")
+        for feature in self.features:
+            for datum in data:
+                sum = 0
+                sumOfExponents = 0
+                exponents = self.getProb(datum)
+                for labExp in exponents.keys():
+                    sumOfExponents += exponents[labExp]
+                     
+                for label in self.labels:
+                    prob = exponents[label]/sumOfExponents
+                    
                 
 max = MaximumEntropy()
 data = max.readTrainFile('trainWithFeatures1.csv')
