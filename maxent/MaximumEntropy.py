@@ -170,12 +170,135 @@ class MaximumEntropy:
         cost  = empericalCount - predC1D
         print("cost",cost)
         return cost
-
     
+    def evaluateDatum(self,datum):
+        
+        
+        empCount = self.empericalCountDatum(datum)
+        count = empCount
+        #print("features",datum.features)
+        
+        sum = 0
+        sumOfExponents = 0
+        exponents = self.getProb(datum)
+        #print("exp",exponents)
+        for labExp in exponents.keys():
+            sumOfExponents += exponents[labExp]
+            #print("feat here",datum.features)     
+        for label in self.labels:
+            #print("sum",sumOfExponents)
+            prob = exponents[label]/sumOfExponents
+            #print("prob",prob)
+            for feature in datum.features:
+                count[self.labelIndexes[label]][self.featureIndexes[feature]]*=prob 
+        
+        pred = count.sum(axis = 1)
+        print("prediction probabilities: ",count)
+        print("actual label, ",datum.label)
+        
+    def getProbTest(self,datum):
+        counts = {}
+        #print("features ",datum.features)
+        #print("label ",datum.label)
+        
+        for label in self.labels:
+           
+            if label == "O":
+                counts[label] = 0
+                for feature in self.features:
+                    #print("di",feature)
+                    if datum.features[feature] == '0':
+                        #print("did")
+                        counts[label] += self.lambdas[self.featureIndexes[feature]]
+            elif label != "O":
+                counts[label] = 0
+                for feature in self.features:
+                    #print("didi")
+                    if datum.features[feature] == '1':
+                        #print("didii")
+                        counts[label] += self.lambdas[self.featureIndexes[feature]]
+                        
+        exponents = {}
+        #print("counts",counts)
+        for key in counts.keys():
+            exponents[key] = np.exp(counts[key])
+        #print("exponents",exponents)
+        return exponents     
+        
+    def evaluate(self,data):
+        f = open("out.txt", mode='w')
+        true = 0
+        truePersons = 0
+        totalPersons = 0
+        total = 0
+        for datum in data:
+            total+=1
+            #empCount = self.empericalCountDatum(datum)
+            #count = empCount
+            #print("features",datum.features)
+            prob = {}
+            sum = 0
+            if datum.label == 'PERSON':
+                totalPersons+=1
+            sumOfExponents = 0
+            exponents = self.getProbTest(datum)
+            #print("exp",exponents)
+            for labExp in exponents.keys():
+                sumOfExponents += exponents[labExp]
+                #print("feat here",datum.features)     
+            for label in self.labels:
+                #print("sum",sumOfExponents)
+                prob[label] = exponents[label]/sumOfExponents
+                
+                #print("prob",prob)
+                #for feature in datum.features:
+                    #count[self.labelIndexes[label]][self.featureIndexes[feature]]*=prob 
+            
+            #pred = count.sum(axis = 1)
+            #print("prediction probabilities: ",pred)
+            
+            max = 0
+            guess_label = 'O'
+            for lab in prob.keys():
+                if prob[lab] > max:
+                    max = prob[lab]
+                    guess_label = lab
+                    
+            datum.guessLabel = guess_label          
+            if guess_label == datum.label:
+                true+=1
+            if guess_label == datum.label and guess_label == 'PERSON':
+                truePersons+=1
+                        
+            #print(datum.word,datum.label,guess_label)
+            f.write(datum.word +" " + datum.label + " " + guess_label + str(prob['O']) + " "+ str(prob['PERSON']) +  "\n" )
+            """
+            if (pred[0]>pred[1]):
+                lab = 'O'
+                if(datum.label == 'O'):
+                    true+=1
+                
+                print(datum.word,datum.label,'O')
+            elif (pred[1]>pred[0]):
+                lab = 'PERSON'
+                if(datum.label == 'PERSON'):
+                    true+=1
+                
+                print(datum.word,datum.label,'PERSON')   
+            print(datum.word,datum.label,lab) 
+            """  
+        print("true classifications=  ", true,"/",total)
+        print("truePerSOns", truePersons, "/",totalPersons)
+        f.write(str(truePersons) +  "/" + str(totalPersons))
+        f.close()
+                    
     def gradientDescent(self,data,empC1D):
+        iter = 0
+        print("iter",iter)
         
         dnBYdm = self.computeCost(data,empC1D)
         #print("a",self.lambdas[1])
+        dnBYdm = -1*dnBYdm
         print("b",dnBYdm)
         temp = self.lambdas
         numIter = 100
@@ -188,26 +311,36 @@ class MaximumEntropy:
             print("temp",temp)
        
             print("dnBYdm",dnBYdm)
-            dnBYdm = self.computeCost(data,empC1D)
+            dnBYdm = -1*(self.computeCost(data,empC1D))
+        iter +=1
             
             
                 
 max = MaximumEntropy()
 data = max.readTrainFile('trainWithFeatures1.csv')
+#data = max.readTrainFile('testWithFeatures.csv')
 empC = max.empericalCount(data)
 empC1D = empC.sum(axis=0)
 max.lambdas = np.zeros(len(max.features))
 max.lambdas = np.ones(len(max.features))
-max.gradientDescent(data,empC1D)
+#max.gradientDescent(data,empC1D)
 #empC = max.empericalCount(data)
 #empC1D = empC.sum(axis=0)
 #print("empCount",empC)
 #print("sum emp count", empC1D)
 #predC = max.predictedCount(data)
 #predC1D = predC.sum(axis=0)
+max.lambdas = np.array([4.63288814  ,2.3448111  , 2.31470926 , 3.37571473 , 2.54351436,  2.51013194, 2.13468754])
+max.evaluate(data)
 
 
 
+'''
+lambda [ 4.63288814  2.3448111   2.31470926  3.37571473  2.54351436  2.51013194
+  2.13468754]
+  '''
+
+  
 
 
 #print("predCOunt",predC1D)

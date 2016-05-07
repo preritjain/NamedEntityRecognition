@@ -1,6 +1,6 @@
 import base64
 from maxent.FeatureFactory import FeatureFactory
-from maxent.MaximumEntropy import MaximumEntropy
+#from maxent.MaximumEntropy import MaximumEntropy
 '''
 Created on 03-May-2016
 
@@ -17,14 +17,14 @@ if __name__ == '__main__':
     trainData = featureFactory.readData(trainFile)
     testData = featureFactory.readData(testFile)
     print("here")
-    trainDataWithFeatures = featureFactory.setFeaturesTrain(trainData)
-    #testDataWithFeatures = featureFactory.setFeaturesTest(testData);
-    maxent = MaximumEntropy()
+    #trainDataWithFeatures = featureFactory.setFeaturesTrain(trainData)
+    testDataWithFeatures = featureFactory.setFeaturesTrain(testData);
+    #maxent = MaximumEntropy()
     
     print('here too')
     #write the updated data into JSON files
     
     
-    featureFactory.writeData(trainDataWithFeatures, 'trainWithFeatures1')
-    #featureFactory.writeData(testDataWithFeatures, 'testWithFeatures');
+    #featureFactory.writeData(trainDataWithFeatures, 'trainWithFeatures1')
+    featureFactory.writeData(testDataWithFeatures, 'testWithFeatures');
 
