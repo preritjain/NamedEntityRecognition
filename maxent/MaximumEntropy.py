@@ -49,7 +49,7 @@ class MaximumEntropy:
         for i in range(0,len(feat)):
             self.featureIndexes[feat[i]] = i  
         
-        self.lambdas = np.zeros(len(self.features))
+        
         return data  
             
             
@@ -172,10 +172,9 @@ class MaximumEntropy:
         return cost
 
     
-    def gradientDescent(self,data):
-        empC = self.empericalCount(data)
-        empC1D = empC.sum(axis=0)
-        dnBYdm = max.computeCost(data,empC1D)
+    def gradientDescent(self,data,empC1D):
+        
+        dnBYdm = self.computeCost(data,empC1D)
         #print("a",self.lambdas[1])
         print("b",dnBYdm)
         temp = self.lambdas
@@ -189,13 +188,17 @@ class MaximumEntropy:
             print("temp",temp)
        
             print("dnBYdm",dnBYdm)
-            dnBYdm = max.computeCost(data,empC1D)
+            dnBYdm = self.computeCost(data,empC1D)
             
             
                 
 max = MaximumEntropy()
-data = max.readTrainFile('temp.csv')
-max.gradientDescent(data)
+data = max.readTrainFile('trainWithFeatures1.csv')
+empC = max.empericalCount(data)
+empC1D = empC.sum(axis=0)
+max.lambdas = np.zeros(len(max.features))
+max.lambdas = np.ones(len(max.features))
+max.gradientDescent(data,empC1D)
 #empC = max.empericalCount(data)
 #empC1D = empC.sum(axis=0)
 #print("empCount",empC)
