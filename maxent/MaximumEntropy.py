@@ -71,31 +71,86 @@ class MaximumEntropy:
         return weights
     
     
+    def empericalCountDatum(self,datum):
+        weights = np.zeros(shape=(len(self.labels),len(datum.features)))
+        for label in self.labels:
+                for feature in self.features:
+                    if (label.strip() != 'O') and (datum.label == label) and (datum.features[feature]=='1'):
+                        weights[self.labelIndexes[label]][self.featureIndexes[feature]]+=1.0
+                    
+                    elif label.strip() == 'O' and datum.label == label and datum.features[feature]=='0':
+                        weights[self.labelIndexes[label]][self.featureIndexes[feature]]+=1.0
+                    else:
+                        continue
+                            
+        #print("there",weights)                
+        return weights
+    
+    
+    
+    def predictedCount(self,trainFeatures):
+        #for feature in self.features:
+        print("lambda",self.lambdas)
+        predCount = np.zeros(shape=(len(self.labels),len(trainFeatures[0].features)))
+        for datum in data:
+            empCount = self.empericalCountDatum(datum)
+            count = empCount
+            #print("features",datum.features)
+            
+            sum = 0
+            sumOfExponents = 0
+            exponents = self.getProb(datum)
+            #print("exp",exponents)
+            for labExp in exponents.keys():
+                sumOfExponents += exponents[labExp]
+                #print("feat here",datum.features)     
+            for label in self.labels:
+                #print("sum",sumOfExponents)
+                prob = exponents[label]/sumOfExponents
+                #print("prob",prob)
+                for feature in datum.features:
+                    count[self.labelIndexes[label]][self.featureIndexes[feature]]*=prob 
+                    predCount[self.labelIndexes[label]][self.featureIndexes[feature]]+=count[self.labelIndexes[label]][self.featureIndexes[feature]]               
+        #print("here",predCount)
+        print(prob)
+        return predCount
+        
+        
+        
     def getProb(self, datum):
         counts = {}
+        #print("features ",datum.features)
+        #print("label ",datum.label)
         
         for label in self.labels:
+           
             if label == "O":
                 counts[label] = 0
                 for feature in self.features:
-                    if feature == '0':
+                    #print("di",feature)
+                    if datum.features[feature] == '0' and datum.label == label:
+                        #print("did")
                         counts[label] += self.lambdas[self.featureIndexes[feature]]
             elif label != "O":
                 counts[label] = 0
-                for feature in datum.features:
-                    if feature == '1':
+                for feature in self.features:
+                    #print("didi")
+                    if datum.features[feature] == '1' and datum.label == label:
+                        #print("didii")
                         counts[label] += self.lambdas[self.featureIndexes[feature]]
                         
         exponents = {}
+        #print("counts",counts)
         for key in counts.keys():
             exponents[key] = np.exp(counts[key])
-        
+        #print("exponents",exponents)
         return exponents                
     
-    
+    """
     def predtictedCount(self,trainFeatures):
         for feature in self.features:
             for datum in data:
+                empCount = self.empericalCountDatum(datum)
                 sum = 0
                 sumOfExponents = 0
                 exponents = self.getProb(datum)
@@ -105,8 +160,54 @@ class MaximumEntropy:
                 for label in self.labels:
                     prob = exponents[label]/sumOfExponents
                     
+    """                
+    
+    def computeCost(self,data,empericalCount):
+        
+        
+        predC = max.predictedCount(data)
+        predC1D = predC.sum(axis=0)
+        cost  = empericalCount - predC1D
+        print("cost",cost)
+        return cost
+
+    
+    def gradientDescent(self,data):
+        empC = self.empericalCount(data)
+        empC1D = empC.sum(axis=0)
+        dnBYdm = max.computeCost(data,empC1D)
+        #print("a",self.lambdas[1])
+        print("b",dnBYdm)
+        temp = self.lambdas
+        numIter = 100
+        l_rate = 0.002
+        for i in range(0,numIter):
+            for j in range(0,len(self.lambdas)):
+                temp[j] = (self.lambdas[j]) - (l_rate)*(dnBYdm[j])
+            
+            self.lambdas = temp
+            print("temp",temp)
+       
+            print("dnBYdm",dnBYdm)
+            dnBYdm = max.computeCost(data,empC1D)
+            
+            
                 
 max = MaximumEntropy()
-data = max.readTrainFile('trainWithFeatures1.csv')
-weight = max.empericalCount(data)
-print(weight)
+data = max.readTrainFile('temp.csv')
+max.gradientDescent(data)
+#empC = max.empericalCount(data)
+#empC1D = empC.sum(axis=0)
+#print("empCount",empC)
+#print("sum emp count", empC1D)
+#predC = max.predictedCount(data)
+#predC1D = predC.sum(axis=0)
+
+
+
+
+
+#print("predCOunt",predC1D)
+
+#print("lambda",max.lambdas)
+#print("dnBYdM",dnBYdm)
