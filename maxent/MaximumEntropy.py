@@ -18,6 +18,7 @@ class MaximumEntropy:
         self.features = []
         self.featureIndexes = {}
         self.lambdas = []
+        self.lambdaIndexes = {}
         '''
         Constructor
         '''
@@ -37,19 +38,20 @@ class MaximumEntropy:
             prevLabel = datum.label
             data.append(datum)
             #print(self.labelIndexes)
-            if self.labelIndexes.get(datum.label) == None:
+            if self.labelIndexes.get(datum.label) == None and datum.label != 'label':
                 lIndex = len(self.labels)
                 self.labels.append(datum.label)
                 self.labelIndexes[datum.label] = lIndex
         
             
         feat = list(data[0].features.keys())
-        self.features = feat
+        self.features = sorted(feat)
+        self.lambdas = np.zeros(len(self.features))
         print("feat", self.featureIndexes)
         for i in range(0,len(feat)):
-            self.featureIndexes[feat[i]] = i  
-        
-        
+            self.lambdaIndexes[feat[i]] = i
+            self.featureIndexes[feat[i]] = i
+          
         return data  
             
             
@@ -91,6 +93,7 @@ class MaximumEntropy:
     def predictedCount(self,trainFeatures):
         #for feature in self.features:
         print("lambda",self.lambdas)
+        print("LambdaIndexes", self.lambdaIndexes)
         predCount = np.zeros(shape=(len(self.labels),len(trainFeatures[0].features)))
         for datum in data:
             empCount = self.empericalCountDatum(datum)
@@ -130,14 +133,14 @@ class MaximumEntropy:
                     #print("di",feature)
                     if datum.features[feature] == '0' and datum.label == label:
                         #print("did")
-                        counts[label] += self.lambdas[self.featureIndexes[feature]]
+                        counts[label] += self.lambdas[self.lambdaIndexes[feature]]
             elif label != "O":
                 counts[label] = 0
                 for feature in self.features:
                     #print("didi")
                     if datum.features[feature] == '1' and datum.label == label:
                         #print("didii")
-                        counts[label] += self.lambdas[self.featureIndexes[feature]]
+                        counts[label] += self.lambdas[self.lambdaIndexes[feature]]
                         
         exponents = {}
         #print("counts",counts)
@@ -206,17 +209,21 @@ class MaximumEntropy:
             if label == "O":
                 counts[label] = 0
                 for feature in self.features:
-                    #print("di",feature)
+                    
                     if datum.features[feature] == '0':
-                        #print("did")
-                        counts[label] += self.lambdas[self.featureIndexes[feature]]
+                        #print("di",feature)
+                        #print("lambdas: ", self.lambdas[self.lambdaIndexes[feature]])
+                        
+                        counts[label] += self.lambdas[self.lambdaIndexes[feature]]
+                        #print("lala", self.featureIndexes[feature], feature)
             elif label != "O":
                 counts[label] = 0
                 for feature in self.features:
-                    #print("didi")
+                    
                     if datum.features[feature] == '1':
-                        #print("didii")
-                        counts[label] += self.lambdas[self.featureIndexes[feature]]
+                        #print("didi" , feature)
+                        #print("lambdas1: ", self.lambdas[self.lambdaIndexes[feature]])
+                        counts[label] +=self.lambdas[self.lambdaIndexes[feature]]
                         
         exponents = {}
         #print("counts",counts)
@@ -225,7 +232,12 @@ class MaximumEntropy:
         #print("exponents",exponents)
         return exponents     
         
-    def evaluate(self,data):
+    def evaluate(self,data, lambs):
+        self.lambdaIndexes = self.featureIndexes
+        #print("Features Indx", self.featureIndexes)
+        #print("Lambdas Indx", self.lambdaIndexes)
+        for feat in lambs.keys():
+            self.lambdas[self.lambdaIndexes[feat]] = lambs[feat]     
         f = open("out.txt", mode='w')
         true = 0
         truePersons = 0
@@ -270,8 +282,9 @@ class MaximumEntropy:
             if guess_label == datum.label and guess_label == 'PERSON':
                 truePersons+=1
                         
-            #print(datum.word,datum.label,guess_label)
-            f.write(datum.word +" " + datum.label + " " + guess_label + str(prob['O']) + " "+ str(prob['PERSON']) +  "\n" )
+            print(datum.word, datum.label, guess_label)
+            
+            f.write(datum.word +" " + datum.label + " " + guess_label + " " + str(prob['O']) + " "+ str(prob['PERSON']) +  "\n" )
             """
             if (pred[0]>pred[1]):
                 lab = 'O'
@@ -287,23 +300,22 @@ class MaximumEntropy:
                 print(datum.word,datum.label,'PERSON')   
             print(datum.word,datum.label,lab) 
             """  
+        print("Prob: ", prob.keys(), "Labels: ", self.labels, "Exponents: ", exponents)
         print("true classifications=  ", true,"/",total)
         print("truePerSOns", truePersons, "/",totalPersons)
         f.write(str(truePersons) +  "/" + str(totalPersons))
         f.close()
                     
     def gradientDescent(self,data,empC1D):
-        iter = 0
-        print("iter",iter)
-        
         dnBYdm = self.computeCost(data,empC1D)
         #print("a",self.lambdas[1])
         dnBYdm = -1*dnBYdm
         print("b",dnBYdm)
         temp = self.lambdas
         numIter = 100
-        l_rate = 0.002
+        l_rate = 0.004
         for i in range(0,numIter):
+            print("iter",i)
             for j in range(0,len(self.lambdas)):
                 temp[j] = (self.lambdas[j]) - (l_rate)*(dnBYdm[j])
             
@@ -312,30 +324,43 @@ class MaximumEntropy:
        
             print("dnBYdm",dnBYdm)
             dnBYdm = -1*(self.computeCost(data,empC1D))
-        iter +=1
             
             
                 
 max = MaximumEntropy()
+
+
+'''
+Training
+'''
+
+'''
 data = max.readTrainFile('trainWithFeatures1.csv')
-#data = max.readTrainFile('testWithFeatures.csv')
 empC = max.empericalCount(data)
 empC1D = empC.sum(axis=0)
+
 max.lambdas = np.zeros(len(max.features))
 max.lambdas = np.ones(len(max.features))
-#max.gradientDescent(data,empC1D)
-#empC = max.empericalCount(data)
-#empC1D = empC.sum(axis=0)
-#print("empCount",empC)
-#print("sum emp count", empC1D)
-#predC = max.predictedCount(data)
-#predC1D = predC.sum(axis=0)
-max.lambdas = np.array([4.63288814  ,2.3448111  , 2.31470926 , 3.37571473 , 2.54351436,  2.51013194, 2.13468754])
-max.evaluate(data)
+
+max.gradientDescent(data,empC1D)
+'''
 
 
 
 '''
+Testing
+'''
+
+#data = max.readTrainFile('testWithFeatures.csv')
+data = max.readTrainFile('trainWithFeatures1.csv')
+
+Lambdas = {"g1": 5.33312322  , "g2": 4.10080488  , "g3": 3.41674071 , "g4": 2.9857928 , "g5": 3.02658496,  "g6": 2.91941517, "g7": 3.33676276}
+max.evaluate(data, Lambdas )
+
+
+
+'''
+Set 1
 lambda [ 4.63288814  2.3448111   2.31470926  3.37571473  2.54351436  2.51013194
   2.13468754]
   '''
