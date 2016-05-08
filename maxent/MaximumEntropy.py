@@ -335,7 +335,7 @@ Training
 '''
 
 '''
-data = max.readTrainFile('trainWithFeatures1.csv')
+data = max.readTrainFile('trainWithFeatures3.csv')
 empC = max.empericalCount(data)
 empC1D = empC.sum(axis=0)
 
@@ -343,22 +343,36 @@ max.lambdas = np.zeros(len(max.features))
 max.lambdas = np.ones(len(max.features))
 
 max.gradientDescent(data,empC1D)
+tempLambs = {}
+for li in max.lambdaIndexes.keys():
+    tempLambs[li]=max.lambdas[max.lamdaIndexes[li]]
+print("tempL",tempLambs)
 '''
-
-
 
 '''
 Testing
 '''
 
 #data = max.readTrainFile('testWithFeatures.csv')
-data = max.readTrainFile('trainWithFeatures1.csv')
+data = max.readTrainFile('trainWithFeatures3.csv')
 
-Lambdas = {"g1": 5.33312322  , "g2": 4.10080488  , "g3": 3.41674071 , "g4": 2.9857928 , "g5": 3.02658496,  "g6": 2.91941517, "g7": 3.33676276}
+
+
+
+
+
+#Lambdas = {"g1": 2.40042083  , "g2": 1.97290033  , "g3": 1.59042316 , "g4": 1.46450967, "g5": 1.57574895,  "g6": 1.46191632, "g7": 1.58909052,'g8':2.32517576,'g9':1.43508929,'g10':1.44784226,'g11':1.45578828, 'g12': 2.66861179}
+Lambdas = {"g1":2.35918217,"g2":1.92378111,"g3":1.392681, "g4":1.19017928, "g5":1.25587356,"g6":1.31936869,"g7":1.33902278, "g8":2.34940918, "g9":1.18078411,"g10" :1.19202389, "g11":1.18018347, "g12":2.67876642,"g13":1.19084026,"g14":1.2142933 }
+
 max.evaluate(data, Lambdas )
 
 
-
+'''
+Set3
+Lambdas = {"g1": 3.41179972  , "g2": 2.59586905  , "g3": 1.66308784 , "g4": 1.4833846, "g5": 1.72501973,  "g6": 1.55728647, "g7": 1.63710564,'g8':3.48764771,'g9':1.38188304,'g10':1.41709881,'g11':1.4051658}
+num iter =100
+lrate = 0.004
+'''
 '''
 Set 1
 lambda [ 4.63288814  2.3448111   2.31470926  3.37571473  2.54351436  2.51013194

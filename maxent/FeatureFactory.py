@@ -18,9 +18,11 @@ class FeatureFactory:
     def __init__(self):
         self.names = frozenset(nltk.corpus.names.words())
         self.midname = re.compile("^[A-Z]\.$")
+        self.locations = frozenset(nltk.corpus.gazetteers.words())
         '''
         Constructor
         '''
+        
     def readData(self, filename):
         data = [] 
         
@@ -95,6 +97,53 @@ class FeatureFactory:
                 return 1    
         return 0
     
+    def g8_allCaps(self,word):
+        if word.upper() == word:
+            return 0
+        return 1
+    
+    def g9_hasApostrophe(self,nextWord):
+        if nextWord == "'s":
+            return 1
+        else:
+            return 0
+    
+    def g10_newSent(self,word,prevWord):
+        if prevWord == "." and self.g2_current_pos(word):
+            return 1
+        else:
+            return 0
+    
+    def g11_prevWord(self,word,prevWord):
+        titles = ['doctor','president','minister','professor','astronaut','actor','actress','officer']
+        if prevWord.lower() in titles:
+            if self.g2_current_pos(word):
+                return 1
+        return 0
+    
+    def g12_locations(self,word):
+        if word in self.locations:
+            return 0
+        else:
+            return 1
+    
+    def g13_nextPOS(self,word,nextWord):
+        if self.g2_current_pos(word):
+            tag = nltk.pos_tag(nltk.word_tokenize(nextWord))[0][1]
+            desiredTags= ['VBZ','VBD','VB','VBN','VBP']
+            if tag in desiredTags:
+                return 1
+        return 0
+    
+    def g14_midNpos(self,word,nextWord):
+        if self.g5_midNames(word):
+            if self.g2_current_pos(nextWord):
+                return 1
+        return 0    
+            
+        
+            
+        
     
     """
     Words is a list of the words in the entire corpus, previousLabel is the label
@@ -106,7 +155,11 @@ class FeatureFactory:
     def computeFeatures(self, words, previousLabel, position):
         features = {}
         currentWord = words[position]
-        previousWord = words[position-1] or "=NOT-A-WORD="
+        if position < len(words)-1:
+            nextWord = words[position +1] or "not-a-word"
+        else:
+            nextWord = "not-a-word"    
+        previousWord = words[position-1] or "=not-a-word="
         features["g1"]=self.g1_case(currentWord)
         features["g2"] = self.g2_current_pos(currentWord)
         features["g3"] = self.g3_gazeteers(currentWord)
@@ -114,7 +167,13 @@ class FeatureFactory:
         features["g5"]=self.g5_midNames(currentWord)
         features["g6"] = self.g6_prevPos_and_currentCase(currentWord,previousWord)
         features["g7"] = self.g7_secondName(currentWord,previousLabel)
-        
+        features["g8"] = self.g8_allCaps(currentWord)
+        features["g9"] = self.g9_hasApostrophe(nextWord)
+        features["g10"] = self.g10_newSent(currentWord, previousWord)
+        features["g11"] = self.g11_prevWord(currentWord, previousWord)
+        features["g12"] = self.g12_locations(currentWord)
+        features["g13"] = self.g13_nextPOS(currentWord, nextWord)
+        features["g14"] = self.g14_midNpos(currentWord, nextWord)
         #print("came in compute")
     
         return features
@@ -142,7 +201,7 @@ class FeatureFactory:
             newData.append(newDatum)
 
             previousLabel = datum.label
-            print(count)
+            #print(count)
             count= count+1
         print("return data")
         return newData
