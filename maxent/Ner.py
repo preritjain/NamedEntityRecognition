@@ -26,6 +26,6 @@ if __name__ == '__main__':
     #write the updated data into JSON files
     
     
-    featureFactory.writeData(trainDataWithFeatures, 'trainWithFeatures3')
+    featureFactory.writeData(trainDataWithFeatures, 'trainWithFeatures')
     #featureFactory.writeData(testDataWithFeatures, 'testWithFeatures');
 

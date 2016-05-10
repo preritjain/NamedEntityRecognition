@@ -17,8 +17,12 @@ class FeatureFactory:
 
     def __init__(self):
         self.names = frozenset(nltk.corpus.names.words())
-        self.midname = re.compile("^[A-Z]\.$")
+        self.midname = re.compile("^[A-Z]\.")
         self.locations = frozenset(nltk.corpus.gazetteers.words())
+        self.days = frozenset(["Monday", "Tuesday", "Wednesday", "Thursday", "Saturday", "Sunday"])
+        self.months = frozenset(["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December", "Jan", "Feb", "Mar", "Apr","May", "Jun", "Jul", "Aug", "Sept", "Oct", "Nov", "Dec"])
+        
+        
         '''
         Constructor
         '''
@@ -51,7 +55,7 @@ class FeatureFactory:
         else: 
             return 0
     
-    
+
     def g2_current_pos(self,word):
         desiredTags= ['NNP','NNPS','NN']
         tag = nltk.pos_tag(nltk.word_tokenize(word))[0][1]
@@ -80,7 +84,7 @@ class FeatureFactory:
             return 0
         
     def g5_midNames(self,word):
-        if self.midname.match(word):
+        if self.midname.match(word.strip()) and self.g2_current_pos(word):
             return 1
         else:
             return 0
@@ -126,7 +130,13 @@ class FeatureFactory:
             return 0
         else:
             return 1
-    
+        
+    def g13_dates(self,word):
+        if word in self.days or word in self.months:
+            return 0
+        else:
+            return 1
+       
     def g13_nextPOS(self,word,nextWord):
         if self.g2_current_pos(word):
             tag = nltk.pos_tag(nltk.word_tokenize(nextWord))[0][1]
@@ -134,14 +144,14 @@ class FeatureFactory:
             if tag in desiredTags:
                 return 1
         return 0
-    
+    '''
     def g14_midNpos(self,word,nextWord):
         if self.g5_midNames(word):
-            if self.g2_current_pos(nextWord):
+            if self.g2_current_pos(nextWord) and self.g2_current_pos(word):
                 return 1
-        return 0    
-            
-        
+        return 0
+    
+    '''    
             
         
     
@@ -172,8 +182,9 @@ class FeatureFactory:
         features["g10"] = self.g10_newSent(currentWord, previousWord)
         features["g11"] = self.g11_prevWord(currentWord, previousWord)
         features["g12"] = self.g12_locations(currentWord)
-        features["g13"] = self.g13_nextPOS(currentWord, nextWord)
-        features["g14"] = self.g14_midNpos(currentWord, nextWord)
+        features["g13"] = self.g13_dates(currentWord)
+       # features["g13"] = self.g13_nextPOS(currentWord, nextWord)
+        #features["g14"] = self.g14_midNpos(currentWord, nextWord)
         #print("came in compute")
     
         return features
